@@ -1,0 +1,169 @@
+---
+title: "interactive analysis"
+author: "Chloe"
+date: "2024-04-11"
+output: html_document
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(palmerpenguins) #penguin data
+library(tidyverse) # data tidying and plots
+library(gtsummary) # quick tidy analysis summaries
+library(modelsummary) # May need to install `data.table` to make package work. Allows for quick tidy analysis summaries.
+library(plotly) # interactive data visualisation
+library(rstatix)
+
+
+df <- penguins  %>% select(- year) # dropping year from analysis
+```
+
+```{r}
+example_code <- penguins %>% 
+  mutate(Penguin_bill_surface_area = bill_length_mm * bill_depth_mm)
+```
+## Summary stats {.tabset}
+
+### Overall Summary
+
+For the overall summary table, we will be using the `modelsummmary` package. It has the really cool feature that it will place histograms into your table! It is a very customisable package, with plenty of options to choose from for all sorts of analyses. For more information, please check their [website](https://modelsummary.com/index.html). 
+
+
+```{r overall_table, echo=FALSE}
+
+table <- df %>% 
+  dplyr::rename( `Bill Length (mm)`= bill_length_mm , 
+                `Bill Depth(mm)` = bill_depth_mm ,
+                `Flipper Length(mm)` = flipper_length_mm ,
+                `Body Mass(g)`= body_mass_g ) %>% 
+  datasummary_skim(#, output = "flextable"
+                 ) 
+
+table
+
+```
+
+
+### By Species
+
+For the within group summaries, we are using the `gtsummary` package. This is another flexible table creator, which I find to be particularly useful and easy to use for subset summaries and analyses. For more information, check out their [website](https://www.danieldsjoberg.com/gtsummary/). 
+```{r species_table, echo=FALSE}
+
+table <- df %>%
+  dplyr::rename(`Bill Length (mm)`= bill_length_mm ,
+                `Bill Depth(mm)` = bill_depth_mm ,
+                `Flipper Length(mm)` = flipper_length_mm ,
+                `Body Mass(g)`= body_mass_g ) %>%
+  tbl_summary(by = species,
+              missing = "ifany",
+              statistic = list(all_continuous() ~ "{mean} ({sd})"))
+
+table
+# d <- as.data.frame(df  %>% 
+#   dplyr::rename(`Bill Length (mm)`= bill_length_mm ,
+#                 `Bill Depth(mm)` = bill_depth_mm ,
+#                 `Flipper Length(mm)` = flipper_length_mm ,
+#                 `Body Mass(g)`= body_mass_g ) )
+# #%>%
+# datasummary_balance(~species, d #, output = "flextable"
+#                  )
+# d
+```
+
+
+### By Island
+```{r island_table, echo=FALSE}
+
+table <- df %>%
+  dplyr::rename( `Bill Length (mm)`= bill_length_mm ,
+                `Bill Depth(mm)` = bill_depth_mm ,
+                `Flipper Length(mm)` = flipper_length_mm ,
+                `Body Mass(g)`= body_mass_g ) %>%
+  tbl_summary(by = island,
+              missing = "ifany",
+              statistic = list(all_continuous() ~ "{mean} ({sd})"))
+
+table
+
+```
+
+### By Sex
+```{r bio_sex_table, echo=FALSE, message = FALSE}
+
+table <- df %>%
+  dplyr::rename( `Bill Length (mm)`= bill_length_mm ,
+                `Bill Depth(mm)` = bill_depth_mm ,
+                `Flipper Length(mm)` = flipper_length_mm ,
+                `Body Mass(g)`= body_mass_g ) %>%
+  tbl_summary(by = sex,
+              missing = "ifany",
+              statistic = list(all_continuous() ~ "{mean} ({sd})"))
+
+table
+
+```
+
+
+## Reporting our data in text{.tabset .tabset-pills}
+
+We can also report our data in text. It will look ugly here, but will be magical in the finished document. The in-line coding is achieved through using backticks and including the letter "r" (as seen below). To simplify process, we first use some data manipulation to define items we want to communicate. The end product allows us to produce transparent analysis, and minimises the risk of typos. As a bonus, it also allows us to re-run our analysis at a much quicker rate if our data is updated!
+
+Once again, we will use the `{.tabset}` to allow our audience to quickly navigate the document. However, this time we are also using `{.tabset-pills}` to change the appearance. Pick and choose which visual style you think is most appropriate for your presentation. (Playing with the themes will change the appearance of the tabsets and tabset-pills as well, so there is plenty of scope for experimenting).
+
+### By Species
+
+```{r , echo = FALSE}
+# Defining mean and sd objects for easier inline coding
+Adelie <- df %>% 
+  dplyr::filter(species == "Adelie")
+Adelie_M_bodymass <- mean(Adelie$body_mass_g, na.rm = TRUE)
+Adelie_sd_bodymass <- sd(Adelie$body_mass_g, na.rm = TRUE)
+
+Chinstrap <- df %>% 
+  dplyr::filter(species == "Chinstrap")
+Chinstrap_M_bodymass <- mean(Chinstrap$body_mass_g, na.rm = TRUE)
+Chinstrap_sd_bodymass <- sd(Chinstrap$body_mass_g, na.rm = TRUE)
+
+Gentoo <- df %>% 
+  dplyr::filter(species == "Gentoo")
+Gentoo_M_bodymass <- mean(Gentoo$body_mass_g, na.rm = TRUE)
+Gentoo_sd_bodymass <- sd(Gentoo$body_mass_g, na.rm = TRUE)
+
+```
+
+* The mean weight of the Adelie penguins is `r round(Adelie_M_bodymass, 2)`g (*sd* = `r  round(Adelie_sd_bodymass,2)`). 
+
+* The mean weight of the Chinstrap penguins is `r round(Chinstrap_M_bodymass, 2)`g (*sd* = `r round(Chinstrap_sd_bodymass,2)`).
+
+* The mean weight of the Gentoo penguins is `r round(Gentoo_M_bodymass, 2)`g (*sd* = `r round(Gentoo_sd_bodymass,2)`).
+
+### By Island
+
+```{r , echo = FALSE}
+# Defining mean and sd objects for easier inline coding
+Biscoe <- df %>% 
+  dplyr::filter(island == "Biscoe")
+Biscoe_M_bodymass <- mean(Biscoe$body_mass_g, na.rm = TRUE)
+Biscoe_sd_bodymass <- sd(Biscoe$body_mass_g, na.rm = TRUE)
+
+Dream <- df %>% 
+  dplyr::filter(island == "Dream")
+Dream_M_bodymass <- mean(Dream$body_mass_g, na.rm = TRUE)
+Dream_sd_bodymass <- sd(Dream$body_mass_g, na.rm = TRUE)
+
+Torgersen <- df %>% 
+  dplyr::filter(island == "Torgersen")
+Torgersen_M_bodymass <- mean(Torgersen$body_mass_g, na.rm = TRUE)
+Torgersen_sd_bodymass <- sd(Torgersen$body_mass_g, na.rm = TRUE)
+
+```
+
+* The mean weight of the penguins on Biscoe island is `r round(Biscoe_M_bodymass, 2)`g (sd = `r  round(Biscoe_sd_bodymass,2)`). 
+
+* The mean weight of the penguins on Dream island is `r round(Dream_M_bodymass, 2)`g (sd = `r round(Chinstrap_sd_bodymass,2)`).
+
+* The mean weight of the penguins on Torgersen island is `r round(Torgersen_M_bodymass, 2)`g (sd = `r round(Gentoo_sd_bodymass,2)`).
+
